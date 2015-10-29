@@ -1,0 +1,5 @@
+configs/*.glb
+configs/flux/*.inc
+configs/core/xsec.inc
+configs/core/smr.inc
+configs/core/eff.inc
