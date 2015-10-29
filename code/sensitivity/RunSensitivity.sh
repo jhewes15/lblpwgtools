@@ -24,107 +24,69 @@ Usage: $(basename "$0")  -- Script to submit jobs which run studies using My GLo
     OPTIONS:
 
       REQUIRED
-        -N            Name of flux type
+        -n            Name of flux type
                         (used for naming generated flux files)
-        -F            FHC flux file
+        -f            FHC flux file
                         (requires full path + filename)
-        -R            RHC flux file
+        -r            RHC flux file
                         (requires full path + filename)
 
       OPTIONAL
         -h            Show this help page.
+        -p <params>   Set oscillation parameters to a specified value.
+                          <params> takes the form THETA_12,THETA_13,THETA_23,dm^2,DM^2,DCP
+                          separated by commas with no spaces in between.
+                          FOR EXAMPLE: -p 0.5883,0.1536,0.7222,0.0000754,0.00243,0
+        -e <params>   Set fractional errors on oscillation parameters.
+                          Syntax is the same as for -p.
+        -s <num>      Run specific sensitivity study. Options are:
+                          1 = CP violation sensitivity vs delta-cp
+                          2 = Mass hierarchy sensitivity vs delta-cp
+                          3 = delta-cp resolution vs delta-cp
+                          4 = CP violation sensitivity vs exposure
+                          5 = Mass hierarchy sensitivity vs exposure
+        -t            Test run - disables oscillation parameter systematics.
+        -l <num>      Resolution - specifies number of data points for exposure studies.
+        -x <num>      X range - specifies maximum exposure for exposure studies
 "
-# Optional arguments disabled for now
-#        -o <params>   Set oscillation parameters to a specified value.
-#                          <params> takes the form THETA_12,THETA_13_NH,THETA_13_IH,THETA_23_NH,THETA_23_IH,dm^2,DM^2_NH,DM^2_IH,DCP
-#                          separated by commas with no spaces in between.
-#                          FOR EXAMPLE: -p 0.5883,0.1536,0.1555,0.7222,0.7202,0.0000754,0.00243,-0.00238,0
-#        -e <params>   Set fractional errors on oscillation parameters.
-#                          Syntax is the same as for -o.
-#        -g            Submit jobs to the grid.
-#        -n,i          Specify normal hierarchy only (n) or inverted hierarchy only (i). Default is both.
-#        -t            Test run - disables oscillation parameter systematics.
-#        -r <num>      Resolution - specifies number of data points for exposure studies.
-#        -x <num>      X range - specifies maximum exposure for exposure studies
-#        -1,2,3,4,5    Run specific sensitivity study. Options are:
-#                          1 = CP violation sensitivity vs delta-cp
-#                          2 = Mass hierarchy sensitivity vs delta-cp
-#                          3 = delta-cp resolution vs delta-cp
-#                          4 = CP violation sensitivity vs exposure
-#                          5 = Mass hierarchy sensitivity vs exposure
-#                          Can specify multiple options, defaults to all.
-
 
 # Parse input arguments
-usegrid=0
-resolution=0
-xrange=0
-osc_syst=1
-both_hierarchies=1
-which_hierarchy=2
-parallelise=0
-plot=0
+optional_args=""
 
-while getopts "N:F:R:ho:e:gnitr:x:12345" option; do
+while getopts "n:f:r:hp:e:s:tr:x:" option; do
   case "${option}" in
-    N)  flux_name=${OPTARG}
+    n)  flux_name=${OPTARG}
         ;;
-    F)  flux_fhc=${OPTARG}
+    f)  flux_fhc=${OPTARG}
         ;;
-    R)  flux_rhc=${OPTARG}
+    r)  flux_rhc=${OPTARG}
         ;;
     h)  echo "${usage}"
         exit
         ;;
-    o)  params=${OPTARG}
+    p)  optional_args="${optional_args} -p ${OPTARG}"
         ;;
-    e)  errors=${OPTARG}
+    e)  optional_args="${optional_args} -e ${OPTARG}"
         ;;
-    g)  if [ "${plot}" -eq "0" ]; then
-          usegrid=1
+    s)  if [ "${OPTARG}" -eq "1" ]; then
+          optional_args="${optional_args} -C1 -T1"
+        elif [ "${OPTARG}" = "2" ]; then
+          optional_args="${optional_args} -C1 -T7"
+        elif [ "${OPTARG}" -eq "3" ]; then
+          optional_args="${optional_args} -C1 -T9"
+        elif [ "${OPTARG}" -eq "4" ]; then
+          optional_args="${optional_args} -C2 -T4"
+        elif [ "${OPTARG}" -eq "5" ]; then
+          optional_args="${optional_args} -C2 -T7"
         else
-          echo You have selected the -q option, so jobs will not be submitted to the grid.
+          echo "Invalid run type chosen! Exiting..."
         fi
         ;;
-    n)  if [ "${both_hierarchies}" -eq "0" ]; then
-          echo Hierarchy specified more than once! Exiting...
-          exit
-        fi
-        echo Running for normal hierarchy only...
-        both_hierarchies=0
-        which_hierarchy=0
+    t)  optional_args="${optional_args} -t"
         ;;
-    i)  if [ "${both_hierarchies}" -eq "0" ]; then
-          echo Hierarchy specified more than once! Exiting...
-          exit
-        fi
-        echo Running for inverted hierarchy only...
-        both_hierarchies=0
-        which_hierarchy=1
+    l)  optional_args="${optional_args} -r ${OPTARG}"
         ;;
-    t)  echo Oscillation parameter systematics disabled.
-        osc_syst=0
-        ;;
-    r)  resolution=${OPTARG}
-        echo Resolution for exposure plots set to ${resolution}
-        ;;
-    x)  xrange=${OPTARG}
-        echo Maximum exposure for exposure plots set to ${xrange}
-        ;;
-    1)  echo Study enabled:    CP violation sensitivity vs delta-cp
-        studies="${studies} 0"
-        ;;
-    2)  echo Study enabled:    Mass hierarchy sensitivity vs delta-cp
-        studies="${studies} 1"
-        ;;
-    3)  echo Study enabled:    delta-cp resolution vs delta-cp
-        studies="${studies} 2"
-        ;;
-    4)  echo Study enabled:    CP violation sensitivity vs exposure
-        studies="${studies} 3"
-        ;;
-    5)  echo Study enabled:    Mass hierarchy sensitivity vs exposure
-        studies="${studies} 4"
+    x)  optional_args="${optional_args} -x ${OPTARG}"
         ;;
     :)  printf "missing argument for -%s\n" "$OPTARG" >&2
         echo "$usage" >&2
@@ -159,5 +121,5 @@ fi
 
 python ${EXEC_PATH}/backend/WriteConfig.py ${flux_name} ${flux_fhc} ${flux_rhc}
 
-mgt -C1 -T1 ${EXEC_PATH}/configs/${flux_name}.glb ${EXEC_PATH}/out/${flux_name}.dat
+mgt ${optional_args} ${EXEC_PATH}/configs/${flux_name}.glb ${EXEC_PATH}/out/${flux_name}.dat
 
