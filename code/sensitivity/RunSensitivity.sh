@@ -70,14 +70,19 @@ while getopts "n:f:r:hp:e:s:tr:x:" option; do
         ;;
     s)  if [ "${OPTARG}" -eq "1" ]; then
           optional_args="${optional_args} -C1 -T1"
+          study_name="cpsens"
         elif [ "${OPTARG}" = "2" ]; then
           optional_args="${optional_args} -C1 -T7"
+          study_name="mhsens"
         elif [ "${OPTARG}" -eq "3" ]; then
           optional_args="${optional_args} -C1 -T9"
+          study_name="cpres"
         elif [ "${OPTARG}" -eq "4" ]; then
           optional_args="${optional_args} -C2 -T4"
+          study_name="cpexp"
         elif [ "${OPTARG}" -eq "5" ]; then
           optional_args="${optional_args} -C2 -T7"
+          study_name="mhexp"
         else
           echo "Invalid run type chosen! Exiting..."
         fi
@@ -121,5 +126,5 @@ fi
 
 python ${EXEC_PATH}/backend/WriteConfig.py ${flux_name} ${flux_fhc} ${flux_rhc}
 
-mgt ${optional_args} ${EXEC_PATH}/configs/${flux_name}.glb ${EXEC_PATH}/out/${flux_name}.dat
+mgt ${optional_args} ${EXEC_PATH}/configs/${flux_name}.glb ${EXEC_PATH}/out/${flux_name}_${study_name}.dat
 

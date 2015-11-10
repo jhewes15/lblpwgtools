@@ -1,0 +1,1 @@
+nominal /lbne/data/users/lblpwg_tools/FastMC_Data/flux_files/v3r2p4b/Baseline_80GeV_ExtendedDP/g4lbne_v3r2p4b_FHC_FD_globes_flux.txt /lbne/data/users/lblpwg_tools/FastMC_Data/flux_files/v3r2p4b/Baseline_80GeV_ExtendedDP/g4lbne_v3r2p4b_RHC_FD_globes_flux.txt
